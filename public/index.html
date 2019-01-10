@@ -12,16 +12,7 @@
     <h3>نرم افزار چت فعال است</h3>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-        var socket = io();
-        socket.on("connect", () => {
-            console.log("Connected to server");
-        });
-
-        socket.on('disconnect', () => {
-            console.log('User was disconnected!');
-        });
-    </script>
+    <script src="js/index.js"></script>
 </body>
 
 </html>
