@@ -12,14 +12,26 @@ var io = socketIO(server);
 io.on('connection', (socket) => {
     console.log('New user Connection!');
 
-    socket.emit('newEmail', {
-        from: 'safir.1987@gmail.com',
-        text: "سلام خوبی؟",
-        created_at: 123
-    });
+    // socket.emit('newMessage', {
+    //     from: 'safir.1987@gmail.com',
+    //     text: "سلام خوبی؟",
+    //     created_at: 123
+    // });
 
-    socket.on('createEmail', (email) => {
-        console.log("Create Email", email);
+    socket.on('createMessage', (message) => {
+        console.log('createMessage', message);
+
+        // io.emit('newMessage', {
+        //     from: message.from,
+        //     text: message.text,
+        //     createAt: new Date().getTime()
+        // });
+
+        socket.broadcast.emit('newMessage', {
+            from: message.from,
+            text: message.text,
+            createdAt: new Date().getTime()
+        })
     });
 
     io.emit('hello', ' world');
