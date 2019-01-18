@@ -9,10 +9,26 @@ var app = express();
 var server = http.createServer(app);
 var io = socketIO(server);
 
+app.engine('html', require('ejs').renderFile);
+app.set('view engine', 'html');
+
+app.get('/chat', (req, res) => {
+    var name = req.query.name;
+    var room = req.query.room;
+    res.render(publicPath + '/chat', {
+        name: name,
+        room: room
+    });
+});
+
 var {
     generateMessage,
     generateLocationMessage
 } = require('./message');
+
+var {
+    isRealString
+} = require('./utils/validation');
 
 io.on('connection', (socket) => {
     console.log('New user Connection!');
@@ -23,11 +39,7 @@ io.on('connection', (socket) => {
     //     created_at: 123
     // });
 
-    socket.broadcast.emit('newMessage', {
-        from: 'Admin',
-        text: 'Welcome to the chat app',
-        createAt: new Date().getTime()
-    });
+
 
     socket.on('createMessage', (message) => {
 
@@ -37,11 +49,19 @@ io.on('connection', (socket) => {
             createAt: new Date().getTime()
         });
 
-        // socket.broadcast.emit('newMessage', {
-        //     from: message.from,
-        //     text: message.text,
-        //     createdAt: new Date().getTime()
-        // });
+
+    });
+
+    socket.on('join', (params, callback) => {
+        if (!isRealString(params.name) && !isRealString(params.room)) {
+            callback('لطفا نام خود و اتاق مورد نظر را وارد کنید');
+        }
+        socket.join(params.room);
+        socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
+
+        socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined`));
+
+        callback();
     });
 
     socket.on('createLocationMessage', (coords) => {

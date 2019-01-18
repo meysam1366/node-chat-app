@@ -23,6 +23,15 @@ socket.on("connect", function () {
     //     from: 'maghsoudi@mmaghsoudi.ir',
     //     text: "Hey, it's work"
     // });
+    var params = $.deparam(window.location.search);
+    socket.emit('join', params, function (err) {
+        if (err) {
+            alert(err);
+            window.location.href = '/';
+        } else {
+            console.log('Not error');
+        }
+    });
 });
 
 socket.on('disconnect', function () {
