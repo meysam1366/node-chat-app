@@ -30,6 +30,11 @@ var {
     isRealString
 } = require('./utils/validation');
 
+const {
+    User
+} = require('./user');
+var users = new User();
+
 io.on('connection', (socket) => {
     console.log('New user Connection!');
 
@@ -42,14 +47,14 @@ io.on('connection', (socket) => {
 
 
     socket.on('createMessage', (message) => {
-
-        io.emit('newMessage', {
-            from: message.from,
-            text: message.text,
-            createAt: new Date().getTime()
-        });
-
-
+        var user = users.getUser(socket.id);
+        if (user && isRealString(message.text)) {
+            io.to(user.room).emit('newMessage', {
+                from: user.name,
+                text: message.text,
+                createAt: new Date().getTime()
+            });
+        }
     });
 
     socket.on('join', (params, callback) => {
@@ -57,6 +62,9 @@ io.on('connection', (socket) => {
             callback('لطفا نام خود و اتاق مورد نظر را وارد کنید');
         }
         socket.join(params.room);
+        users.removeUser(socket.id);
+        users.addUser(socket.id, params.name, params.room);
+        io.to(params.room).emit('updateUserList', users.getUserList(params.room));
         socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
 
         socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined`));
@@ -65,7 +73,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('createLocationMessage', (coords) => {
-        io.emit('newLocationMessage', generateLocationMessage('Admin', coords.latitude, coords.longitude));
+        var user = users.getUser(socket.id);
+        if (user) {
+            io.to(user.room).emit('newLocationMessage', generateLocationMessage(user.name, coords.latitude, coords.longitude));
+        }
     });
 
     // io.emit('hello', ' world');
@@ -73,6 +84,11 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('User was disconnected!');
+        var user = users.removeUser(socket.id);
+        if (user) {
+            io.to(user.room).emit('updateUserList', users.getUserList(user.room));
+            io.to(user.room).emit('newMessage', generateMessage(user.name, `${user.name} has leave`));
+        }
     });
 })
 
